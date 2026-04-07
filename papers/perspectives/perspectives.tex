@@ -1,0 +1,205 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{hyperref}
+
+\newcommand{\ones}{\mathbf{1}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\KL}{\operatorname{KL}}
+\newcommand{\Tset}{\mathcal{T}}
+
+\title{Perspectives on Learning Reverse Dynamics in Discrete Diffusion}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Setup and the structural gap with Euclidean diffusion}
+
+Let $\mathcal X=\{1,\dots,n\}$ and $(h^t)_{t=0}^T$ be histograms on $\mathcal X$:
+\[
+h^{t+1}=P^\top h^t,\qquad t=0,\dots,T-1.
+\]
+Reverse kernels are matrices $Q^t\in\mathbb R_+^{n\times n}$ acting by
+\[
+h^t=(Q^t)^\top h^{t+1}.
+\]
+Admissible kernels are
+\[
+\Tset(h^{t+1},h^t)
+=\{K\ge 0:\ K\ones=\ones,\ K^\top h^{t+1}=h^t\}.
+\]
+
+The key distinction with Euclidean diffusion is:
+\[
+\text{discrete reverse model: }(i,t)\mapsto Q^t(i,\cdot)\in\Delta_n,
+\qquad
+\text{continuous reverse model: }(x,t)\mapsto v_t(x)\in\mathbb R^d.
+\]
+So discrete learning is distribution-valued, while score/velocity learning is vector-valued. This structural mismatch is the origin of the sampling-cost gap.
+
+\section{Direct conditional regression: precise objective and limitations}
+
+\subsection*{Population objective decomposition}
+Let $Q_\star^t(i,\cdot)$ be the true reverse conditional and $\mu_t(i)=h_i^{t+1}$ the context law. Define
+\[
+\mathcal R(\theta)
+=\frac1T\sum_{t=0}^{T-1}\sum_{i=1}^n \mu_t(i)\,
+\mathbb E_{j\sim Q_\star^t(i,\cdot)}[-\log Q_\theta^t(i,j)].
+\]
+Then
+\[
+\mathcal R(\theta)
+=C_\star+\frac1T\sum_{t=0}^{T-1}\sum_{i=1}^n \mu_t(i)\,
+\KL\!\big(Q_\star^t(i,\cdot)\,\|\,Q_\theta^t(i,\cdot)\big),
+\]
+where $C_\star$ does not depend on $\theta$. Hence NLL is statistically aligned with conditional recovery.
+
+\subsection*{Admissibility is not automatic}
+Even if each row of $Q_\theta^t$ is normalized (softmax output),
+\[
+Q_\theta^t\ones=\ones
+\]
+does \emph{not} imply
+\[
+(Q_\theta^t)^\top h^{t+1}=h^t.
+\]
+A precise discrepancy metric is
+\[
+\Delta(\theta)
+\coloneqq
+\frac1T\sum_{t=0}^{T-1}
+\left\|(Q_\theta^t)^\top h^{t+1}-h^t\right\|_1.
+\]
+One can train with
+\[
+\min_\theta\ \mathcal R(\theta)+\lambda\,\Delta(\theta),
+\]
+or use explicit projection/parameterization so $Q_\theta^t\in\Tset(h^{t+1},h^t)$ by construction.
+
+\section{Sampling complexity: where brute-force fails}
+
+If $\mathcal X$ has size $n$, sampling one backward trajectory from dense kernels costs roughly
+\[
+\mathcal O(T\,n)
+\]
+without preprocessing (or $\mathcal O(T)$ draws after $\mathcal O(Tn^2)$ alias preprocessing).
+For very large $n$ (or infinite discrete spaces), dense categorical outputs become the bottleneck.
+
+Structured factorizations reduce this:
+\begin{itemize}
+\item autoregressive tokenization: replace one $n$-way draw by a product of low-arity draws;
+\item local-move kernels with degree $d\ll n$: per-step cost $\mathcal O(d)$.
+\end{itemize}
+This is a primary practical reason to prefer structured reverse parameterizations over unconstrained full-conditionals.
+
+\section{Binary Langevin viewpoint and diffusion-compatible extension}
+
+For $\mathcal X=\{0,1\}^d$, denote by $x^{(k)}$ the bit-flip of coordinate $k$.
+Langevin-type binary samplers (as in arXiv:2502.00557) use gradient-informed local moves instead of full-state categoricals.
+This suggests the following diffusion-compatible family.
+
+\subsection*{Sparse reverse kernel parameterization}
+Choose neighbor set
+\[
+\mathcal N(x)=\{x^{(1)},\dots,x^{(d)}\}.
+\]
+Define logits $s_\theta^t(x,k)$ and local probabilities
+\[
+\pi_\theta^t(k\mid x)
+=\frac{\exp(s_\theta^t(x,k))}{\sum_{\ell=1}^d \exp(s_\theta^t(x,\ell))}.
+\]
+Set a sparse kernel
+\[
+Q_\theta^t(x,y)=
+\begin{cases}
+\alpha_t\,\pi_\theta^t(k\mid x), & y=x^{(k)},\\
+1-\alpha_t, & y=x,\\
+0, & \text{otherwise},
+\end{cases}
+\]
+with $\alpha_t\in(0,1]$.
+This guarantees row-stochasticity and yields $\mathcal O(d)$ sampling.
+
+\subsection*{Connection with score-like quantities}
+If one has a score surrogate $g_t(x)\approx \nabla_x \log h^t(x)$ (or discrete differences), one can set
+\[
+s_\theta^t(x,k)\approx \beta_t\,\delta_k \log h^t(x),
+\]
+where $\delta_k$ is a discrete directional difference. This mimics Langevin-style local preference while remaining in a Markov-kernel formulation.
+
+\subsection*{Diffusion constraints}
+The target constraints remain exactly
+\[
+h^{t+1}=P^\top h^t,\qquad
+h^t=(Q^t)^\top h^{t+1},\qquad
+Q^t\in\Tset(h^{t+1},h^t).
+\]
+Hence the concrete training problem is:
+\[
+\min_\theta\ \mathcal R(\theta)+\lambda\,\Delta(\theta)
+\quad\text{with sparse }Q_\theta^t.
+\]
+This is the precise bridge: keep diffusion equations unchanged, replace dense conditionals by structured local kernels inspired by binary Langevin updates.
+
+\section{Discrete optimal transport interpretation on the binary cube}
+
+For each time step, set
+\[
+a=h^{t+1},\qquad b=h^t,\qquad \pi^t=\diag(a)\,Q^t.
+\]
+Then
+\[
+Q^t\in\Tset(a,b)
+\quad\Longleftrightarrow\quad
+\pi^t\in\Pi(a,b),
+\]
+where
+\[
+\Pi(a,b)=\{\pi\ge 0:\ \pi\ones=a,\ \pi^\top\ones=b\}.
+\]
+So reverse-kernel learning is equivalent to learning couplings with prescribed marginals.
+
+On $\{0,1\}^d$, define a geometry-aware cost $c(x,y)$, for instance
+\[
+c(x,y)=\|x-y\|_0,
+\]
+or a strict local-move cost with $c(x,y)=+\infty$ when $y\notin \mathcal N(x)\cup\{x\}$.
+Each reverse step can then be posed as
+\[
+\min_{\pi^t\in\Pi(h^{t+1},h^t)} \langle C,\pi^t\rangle,
+\qquad C_{xy}=c(x,y),
+\]
+which is a discrete OT problem on the cube.
+
+To integrate learning, use a reference coupling
+\[
+\bar\pi_\theta^t=\diag(h^{t+1})\,\bar Q_\theta^t
+\]
+from a score/Langevin-inspired sparse kernel, and solve
+\[
+\min_{\pi^t\in\Pi(h^{t+1},h^t)}
+\ \langle C,\pi^t\rangle
++\varepsilon\,\KL(\pi^t\|\bar\pi_\theta^t).
+\]
+This yields a sharp decomposition:
+\begin{itemize}
+\item $C$ imposes transport geometry (Hamming/locality);
+\item $\bar\pi_\theta^t$ injects learned directional prior;
+\item $\Pi(h^{t+1},h^t)$ enforces diffusion-consistent marginals.
+\end{itemize}
+Hence the perspective is not only ``fit a conditional'' but ``fit a time-indexed OT coupling field with learned reference dynamics''.
+
+\section{Sharper open problems}
+
+\begin{itemize}
+\item Characterize model classes where $Q_\theta^t\in\Tset(h^{t+1},h^t)$ holds by design with low sampling complexity.
+\item Quantify the expressivity gap between dense kernels and sparse local kernels under fixed computational budget.
+\item Establish when score-like local logits recover the Bayes reverse kernel (exactly or approximately) on $\{0,1\}^d$.
+\item For sequence models, combine causality factorization and diffusion-time conditioning without serializing all dimensions.
+\item Evaluate models on a triplet of criteria: NLL, admissibility gap $\Delta(\theta)$, and effective wall-clock sampling cost.
+\end{itemize}
+
+\end{document}

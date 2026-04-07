@@ -1,0 +1,150 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{hyperref}
+
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\KL}{\operatorname{KL}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\title{Score Matching vs Denoising Score Matching\\[0.3em]\large Equivalence, Limits, and What Is Actually Learned}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Question and Setup}
+Let $X\sim \rho$ on $\R^d$ with smooth positive density $\rho$.
+Define the score
+\[
+ s_\rho(x) \coloneqq \nabla \log \rho(x).
+\]
+A common population objective is the Fisher divergence
+\begin{equation}
+\label{eq:fisher}
+\mathcal F(s_\theta;\rho)
+\coloneqq
+\E_{X\sim\rho}\!\big[\|s_\theta(X)-s_\rho(X)\|^2\big].
+\end{equation}
+This objective explicitly contains the unknown score $s_\rho$.
+Denoising score matching (DSM) replaces it by a noise-corruption objective.
+
+\section{DSM Identity at Fixed Noise Level}
+Fix $\sigma>0$ and define
+\[
+Y = X + \sigma Z,
+\qquad
+Z\sim \mathcal N(0,I_d),
+\qquad
+p_\sigma = \rho * \mathcal N(0,\sigma^2 I_d).
+\]
+The DSM loss is
+\begin{equation}
+\label{eq:dsm-loss}
+\mathcal J_\sigma(s_\theta)
+\coloneqq
+\E\!\left[\left\|s_\theta(Y)+\frac{Y-X}{\sigma^2}\right\|^2\right].
+\end{equation}
+
+\begin{proposition}[Exact DSM decomposition]
+\label{prop:dsm-decomp}
+For every measurable $s_\theta$ with finite second moments,
+\begin{equation}
+\label{eq:dsm-decomp}
+\mathcal J_\sigma(s_\theta)
+=
+\E_{Y\sim p_\sigma}\!\big[\|s_\theta(Y)-\nabla\log p_\sigma(Y)\|^2\big]
++
+C_\sigma,
+\end{equation}
+where
+\[
+C_\sigma
+=
+\E\!\left[\left\|\frac{Y-X}{\sigma^2}-\E\!\left[\frac{Y-X}{\sigma^2}\mid Y\right]\right\|^2\right]
+\]
+is independent of $\theta$.
+Hence minimizers of $\mathcal J_\sigma$ are exactly minimizers of
+\[
+\E_{Y\sim p_\sigma}\!\big[\|s_\theta(Y)-\nabla\log p_\sigma(Y)\|^2\big].
+\]
+\end{proposition}
+
+\begin{proof}
+Set
+\[
+\phi(Y) \coloneqq -\E\!\left[\frac{Y-X}{\sigma^2}\mid Y\right].
+\]
+By Tweedie/Stein identity for Gaussian corruption, $\phi(Y)=\nabla\log p_\sigma(Y)$ a.s.
+Now write
+\[
+\frac{Y-X}{\sigma^2} = -\phi(Y) + \eta,
+\qquad
+\E[\eta\mid Y]=0.
+\]
+Then
+\[
+\mathcal J_\sigma(s_\theta)
+=
+\E\big[\|s_\theta(Y)-\phi(Y)+\eta\|^2\big]
+=
+\E\big[\|s_\theta(Y)-\phi(Y)\|^2\big] + \E\big[\|\eta\|^2\big],
+\]
+because the cross term is zero by conditional centering.
+Substitute $\phi=\nabla\log p_\sigma$.
+\end{proof}
+
+\paragraph{Answer to ``is DSM equivalent to score matching?''}
+At fixed $\sigma$, DSM is \emph{exactly equivalent} (same minimizers) to score regression on the \emph{noised density} $p_\sigma$, not directly on $\rho$.
+
+\section{Relation to the Original Score Objective}
+The original Fisher objective \eqref{eq:fisher} targets $s_\rho$.
+DSM at scale $\sigma$ targets $\nabla\log p_\sigma$.
+So at finite noise they are not the same target unless $p_\sigma=\rho$.
+
+Under standard smoothness/integrability assumptions and as $\sigma\to 0$,
+\[
+p_\sigma \to \rho,
+\qquad
+\nabla\log p_\sigma \to \nabla\log \rho,
+\]
+(in suitable $L^2(\rho)$ or local Sobolev senses), so DSM converges to the original score objective in the small-noise limit.
+
+\begin{remark}[Why one-step small-time formulas look singular]
+In discrete-time diffusion derivations, the one-step denoising target
+\[
+D_\tau \coloneqq \frac{X^t-X^{t+\tau}}{2\tau}
+\]
+has variance of order $1/\tau$.
+Thus naive unscaled one-step losses diverge as $\tau\downarrow 0$.
+The meaningful object is the excess risk (or constants removed), and then a multi-step/time-integrated limit over $T\sim 1/\tau$.
+\end{remark}
+
+\section{Time-Dependent Diffusion Training}
+For a time-indexed noising family $(p_t)_{t\in[0,\mathsf T]}$, practical training samples
+\[
+t\sim \lambda,\quad X^t\sim p_t,\quad X^{t+\delta}\mid X^t\ \text{from the forward transition},
+\]
+and minimizes a denoising objective at each $t$.
+By Proposition~\ref{prop:dsm-decomp}, this is equivalent (up to additive constants) to regressing toward the score of the corresponding noised marginal.
+After summation/integration in time, one obtains the classical weighted score objective
+\[
+\int_0^{\mathsf T} w(t)
+\E_{x\sim p_t}\!\big[\|s_\theta^t(x)-\nabla\log p_t(x)\|^2\big]dt,
+\]
+with weight $w$ determined by the chosen parameterization/noise schedule.
+
+\section{Takeaway}
+\begin{itemize}
+\item DSM removes explicit access to the true score from the \emph{loss expression}.
+\item At fixed noise level, DSM is exactly equivalent to score regression on the corresponding noised density.
+\item The target equals the true data score only in the zero-noise limit (with regularity assumptions).
+\item In diffusion, the operational objective is the time-integrated version, not a naive single-step $\tau\to0$ formula.
+\end{itemize}
+
+\end{document}

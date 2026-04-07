@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Local bibliography sources (do not sync)
+/biblio/sources/
+/biblio/sources/**
+
+# Any generic sources directory
+sources/
+sources/sources/
+sources/sources/**
+**/sources/

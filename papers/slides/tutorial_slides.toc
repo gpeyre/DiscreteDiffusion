@@ -1,0 +1,5 @@
+\beamer@sectionintoc {1}{Forward Process}{3}{0}{1}
+\beamer@sectionintoc {2}{Backward Kernels}{6}{0}{2}
+\beamer@sectionintoc {3}{Numerics}{10}{0}{3}
+\beamer@sectionintoc {4}{Learning Reverse Kernels}{13}{0}{4}
+\beamer@sectionintoc {5}{Takeaways}{16}{0}{5}

@@ -1,0 +1,59 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\title{Sharp Summary: Campbell et al. (2022) -- Continuous-Time Discrete Diffusion}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\section*{Problem and contribution}
+This paper gives a full CTMC formulation of discrete diffusion: forward noising rates, reverse-time rates, continuous-time ELBO, and scalable sampling (tau-leaping + predictor-corrector).
+
+\section*{Forward and reverse CTMC}
+Forward infinitesimal transition:
+\[
+q_{t\mid t-\Delta t}(x\mid \tilde x)=\delta_{x,\tilde x}+R_t(\tilde x,x)\Delta t+o(\Delta t).
+\]
+Reverse-time CTMC is defined by
+\[
+q_{t\mid t+\Delta t}(\tilde x\mid x)=\delta_{\tilde x,x}+\hat R_t(x,\tilde x)\Delta t+o(\Delta t).
+\]
+For $x\neq \tilde x$:
+\[
+\hat R_t(x,\tilde x)
+=R_t(\tilde x,x)
+\sum_{x_0}
+\frac{q_{t\mid 0}(\tilde x\mid x_0)}{q_{t\mid 0}(x\mid x_0)}
+q_{0\mid t}(x_0\mid x),
+\]
+with $\hat R_t(x,x)=-\sum_{x'\neq x}\hat R_t(x,x')$.
+This is the continuous-time analogue of Bayes inversion.
+
+\section*{Learning objective}
+Because $q_{0\mid t}$ is intractable, replace it by denoiser $p^\theta_{0\mid t}$ to get $\hat R_t^\theta$.
+Then minimize the CT negative ELBO
+\[
+\mathcal L_{\mathrm{CT}}(\theta)
+= T\,\mathbb E_{t\sim\mathcal U(0,T),\,q_t(x)r_t(\tilde x\mid x)}
+\Big[
+\sum_{x'\neq x}\hat R_t^\theta(x,x')
+-\mathcal Z^t(x)\log \hat R_t^\theta(\tilde x,x)
+\Big]+C.
+\]
+This is the continuous-time counterpart of discrete diffusion ELBO training.
+
+\section*{Sampling theory and algorithmics}
+Sampling uses tau-leaping, approximating jump counts by Poisson variables with means proportional to $\tau\hat R_t^\theta$.
+Predictor-corrector adds a correction rate
+\[
+R_t^c = R_t + \hat R_t,
+\]
+whose stationary law at fixed $t$ is $q_t$.
+The paper also provides an error decomposition combining reverse-rate approximation error and tau-leaping discretization error.
+
+\section*{Relevance to this repo}
+\textbf{Direct and high-value.}
+It is the cleanest CTMC formalization of ``learn reverse dynamics from denoising posteriors'', and it informs how step-3 learning of $Q^t$ scales beyond toy finite-state chains.
+
+\end{document}

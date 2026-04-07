@@ -1,0 +1,51 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\title{Sharp Summary: Bach \& Saremi (2025) -- Binary Denoising and Discrete Langevin}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\section*{Problem and scope}
+Target distribution $p$ is on the hypercube $\{-1,1\}^d$. The paper asks how to port score/denoising logic to a purely binary space (no Gaussian additive noise).
+
+\section*{Noise model and key identity}
+Define Bernoulli sign-flip corruption:
+\[
+y = x\circ \varepsilon,
+\qquad
+\mathbb P(\varepsilon_i=1)=\sigma(2\alpha),
+\]
+with noise level $\alpha\ge 0$.
+The noisy law $q_\alpha$ has exponential-tilt form (in $x^\top y$), and the central Tweedie-type identity is
+\[
+\mathbb E[x\mid y]=\frac{1}{\alpha}\nabla \log q_\alpha(y).
+\]
+Hence the Hamming-optimal denoiser is
+\[
+f^*(y)=\operatorname{sign}(\mathbb E[x\mid y]).
+\]
+
+\section*{Learning and sampling}
+Learning can be done by logistic denoising regression on pairs $(x, x\circ\varepsilon)$, targeting $\mathbb E[x\mid y]$.
+Sampling is done on noisy space via discrete Langevin-type Markov kernels using score information, then optional denoising/jump.
+
+The paper proves Wasserstein contractivity/exponential convergence for one-stage and two-stage discrete Langevin variants, and bounds stationary bias relative to target $q_\alpha$; practically, high-noise regimes (small $\alpha$) are easier to mix.
+
+\section*{What this is \emph{not}}
+This is not a DDPM forward-time schedule paper and not a Bayes reverse-kernel derivation for finite categorical chains. It is a score-driven MCMC paper on binary spaces.
+
+\section*{Insight for discrete diffusion projects}
+Even outside DDPM formalism, it provides a precise message for step-3 style learning:
+\begin{itemize}
+\item denoising targets can define a valid score surrogate in discrete spaces,
+\item noise level controls a geometry-vs-recoverability trade-off,
+\item sampling quality depends on both denoiser accuracy and Markov kernel mixing.
+\end{itemize}
+
+\section*{Relevance to this repo}
+\textbf{Indirect-to-medium.}
+Not directly about $Q^t$ Bayes kernels, but very relevant for understanding discrete denoising objectives and Langevin-style alternatives to ancestral reverse-chain sampling.
+
+\end{document}

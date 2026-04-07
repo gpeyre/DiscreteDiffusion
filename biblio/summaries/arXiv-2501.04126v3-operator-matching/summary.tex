@@ -1,0 +1,99 @@
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\title{Sharp Summary: arXiv:2501.04126v3 -- Operator Flow Matching for Stochastic Processes}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\section*{Problem and goal}
+The paper addresses \emph{stochastic process learning} (SPL): learn a prior over functions from data, beyond Gaussian-process assumptions, while retaining three properties simultaneously:
+\begin{itemize}
+\item sampling values at arbitrary query sets,
+\item tractable likelihood for queried values,
+\item Bayesian posterior inference for functional regression.
+\end{itemize}
+
+The proposed framework is \textbf{Operator Flow Matching} (OFM): flow matching extended to function space and implemented through neural operators.
+
+\section*{Core mathematical object}
+On a Hilbert space $\mathcal H$, define a flow map $\Phi_t$ by
+\[
+\frac{d}{dt}\Phi_t(h_0)=\mathcal G_t(\Phi_t(h_0)),\qquad h_t=\Phi_t(h_0),
+\]
+with pushforward law $\mu_t=(\Phi_t)_\#\mu_0$. Dynamics satisfy continuity equation
+\[
+\partial_t\mu_t=-\nabla\cdot(\mu_t\mathcal G_t),
+\]
+used in weak form with cylindrical test functions.
+
+In finite query form (points $x_{1:n}$), this becomes an ODE in $\mathbb R^n$:
+\[
+\dot u_t=\mathcal G_t(u_t),
+\]
+with transported density $p_t$ and exact log-density identity
+\[
+\log p_t(u_t)=\log p_0(u_0)-\int_0^t (\nabla\cdot\mathcal G_s)(u_s)\,ds.
+\]
+
+\section*{Training formalism: conditional/marginal flow matching}
+As in classical flow matching, direct target field $\mathcal G_t$ is unknown. OFM introduces conditional paths:
+\[
+p_t(u_t)=\int p_t(u_t\mid z)q(z)\,dz,
+\]
+and uses conditional flow matching objective
+\[
+\mathcal L_{\mathrm{CFM}}
+=\mathbb E\big[\|\mathcal G_\theta(t,u_t)-\mathcal G_t(u_t\mid z)\|^2\big],
+\]
+with same gradient as the marginal objective.
+
+A key choice is $z=(u_0,u_1)$ from a coupling (approximating OT coupling). With Gaussian conditional bridge
+\[
+p_t(u_t\mid z)=\mathcal N\big((1-t)u_0+t u_1,\ \sigma^2K(x_{1:n})\big),
+\]
+OFM gets closed-form target velocity
+\[
+\mathcal G_t(u_t\mid z)=u_1-u_0.
+\]
+This is the infinite-dimensional/operator analogue of OT-path flow matching in finite dimensions.
+
+\section*{Likelihood and posterior regression}
+Because the map is invertible, queried-value likelihood is exact via change of variables:
+\[
+\log \mathbb P(u_1)=\log \mathbb P(u_0)-\int_0^1\nabla\cdot\mathcal G_\theta(u_t,t)\,dt.
+\]
+Divergence is estimated with Hutchinson:
+\[
+\nabla\cdot\mathcal G_\theta(u)
+=\mathbb E_\varepsilon\big[\varepsilon^\top J_{\mathcal G_\theta}(u)\varepsilon\big],
+\]
+reducing complexity from quadratic to effectively linear in number of queried points.
+
+Given noisy observations $\hat u(x_i)=u(x_i)+\epsilon_i$, posterior over queried values is
+\[
+\log p(u\mid \hat u)= -\frac{1}{2\sigma^2}\sum_i\|\hat u(x_i)-u(x_i)\|^2 + \log p(u)+C,
+\]
+then sampled with SGLD (in latent GP/input space through invertible mapping).
+
+\section*{What is technically new}
+\begin{itemize}
+\item Extends flow matching to stochastic processes through neural-operator parameterized vector fields over query sets.
+\item Connects finite-query flow matching and function-space transport via Kolmogorov extension consistency.
+\item Integrates prior learning and posterior functional regression with explicit likelihoods (not only sample generation).
+\item Uses OT-inspired coupling/path to improve optimization and sampling efficiency.
+\end{itemize}
+
+\section*{Precision on claims and assumptions}
+The ``exact'' prior/posterior density claim is exact \emph{for the learned invertible model and chosen discretization/query set}. Statistical exactness to the true process depends on model class, optimization, and data coverage. OT coupling is approximated in practice (e.g., minibatch schemes), so gains are empirical plus asymptotic/approximation-theoretic.
+
+\section*{Relevance to this repository}
+Directly relevant at a formal level:
+\begin{itemize}
+\item The tutorial learns reverse kernels in discrete time; OFM learns continuous vector fields/operators.
+\item Both are conditional transport learning problems with explicit probabilistic semantics.
+\item OFM suggests a \emph{continuous-time operator-matching view} of reverse-process learning, which can be specialized to finite-state Markov chains via generator matching (weak form with test functions).
+\end{itemize}
+
+\end{document}

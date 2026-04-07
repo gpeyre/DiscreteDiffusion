@@ -1,0 +1,35 @@
+\begin{thebibliography}{4}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Austin et~al.(2021)Austin, Johnson, Ho, Tarlow, and van~den
+  Berg]{austin2021structured}
+Jacob Austin, Daniel Johnson, Jonathan Ho, Daniel Tarlow, and Rianne van~den
+  Berg.
+\newblock Structured denoising diffusion models in discrete state-spaces.
+\newblock \emph{arXiv preprint arXiv:2107.03006}, 2021.
+
+\bibitem[Bach and Saremi(2025)]{bach2025binary}
+Francis Bach and Saeed Saremi.
+\newblock Sampling binary data by denoising through score functions.
+\newblock \emph{arXiv preprint arXiv:2502.00557}, 2025.
+
+\bibitem[Campbell et~al.(2022)Campbell, Benton, De~Bortoli, Rainforth,
+  Deligiannidis, and Doucet]{campbell2022continuous}
+Andrew Campbell, Joe Benton, Valentin De~Bortoli, Tom Rainforth, George
+  Deligiannidis, and Arnaud Doucet.
+\newblock A continuous time framework for discrete denoising models.
+\newblock \emph{arXiv preprint arXiv:2205.14987}, 2022.
+
+\bibitem[Pauline et~al.(2025)Pauline, H{"o}ppe, Neklyudov, Tong, Bauer, and
+  Dittadi]{pauline2025foundations}
+Vincent Pauline, Tobias H{"o}ppe, Kirill Neklyudov, Alexander Tong, Stefan
+  Bauer, and Andrea Dittadi.
+\newblock Foundations of diffusion models in general state spaces: A
+  self-contained introduction.
+\newblock \emph{arXiv preprint arXiv:2512.05092}, 2025.
+
+\end{thebibliography}
