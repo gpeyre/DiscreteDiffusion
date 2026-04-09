@@ -1,40 +1,33 @@
 # DiscreteDiffusion
 
-This repository is a tutorial workspace for discrete diffusion models.
+This repository contains companion material for a mathematical tutorial on discrete diffusion models, with a focus on discrete space and discrete time.
 
-## Purpose
+## Main Links
 
-The project builds a pedagogical bridge between:
-- forward/reverse Markov chains on finite state spaces,
-- practical simulation in PyTorch,
-- and learning reverse kernels in the style of score/denoising methods.
+- Tutorial paper (PDF): [tutorial/tutorial.pdf](tutorial/tutorial.pdf)
+- Tutorial source (LaTeX): [tutorial/tutorial.tex](tutorial/tutorial.tex)
+- Discrete Diffusion notebook on `ot4ml`: [python/8-discrete_diffusion.ipynb](https://github.com/gpeyre/ot4ml/blob/main/python/8-discrete_diffusion.ipynb)
+- Open in Colab: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/gpeyre/ot4ml/blob/main/python/8-discrete_diffusion.ipynb)
 
-## Repository content
+## Repository Structure
 
-- `codes/discrete_diffusion.ipynb`
-  - Main notebook tutorial.
-  - Two forward kernels on `n=30` states:
-    - geometric local random walk on a cycle,
-    - masking/absorbing kernel with a trash-bin state.
-  - Forward simulation (particles + histogram recursion).
-  - Backward simulation using Bayes inverse kernels.
-  - Learning section: 2-layer neural network approximating time-dependent reverse kernels `Q^t`.
+- `tutorial/`
+  - Main LaTeX notes in [tutorial/tutorial.tex](tutorial/tutorial.tex)
+  - Compiled PDF in [tutorial/tutorial.pdf](tutorial/tutorial.pdf)
+  - Bibliography in `tutorial/tutorial.bib`
+  - Figure assets in `tutorial/figures/`
+  - Auxiliary LaTeX material in `tutorial/aux/`
 
-- `papers/tutorial/tutorial.tex`
-  - Main tutorial paper in LaTeX.
-  - Unified notation with the notebook (`h^{t+1}=P^\top h^t`, Bayes kernel `Q^t`).
-  - Forward process, backward process, admissible kernels and transport polytope viewpoint, and learning objective.
+- `codes/`
+  - Local working copy of the notebook in [codes/discrete_diffusion.ipynb](codes/discrete_diffusion.ipynb)
 
-- `papers/internship/internship.tex`
-  - Clean LaTeX version of the internship project description.
+## Scope
 
-- `papers/internship/references.bib`
-  - BibTeX database for internship references.
+The notes and notebook develop a discrete diffusion tutorial around:
 
-- `biblio/summaries/*/summary.tex`
-  - Condensed tutorial summaries of the papers stored in `biblio/sources/`.
+- forward noising by Markov kernels,
+- Bayes reverse kernels and their coupling interpretation,
+- learning reverse transitions from samples,
+- and the connection with continuous Gaussian diffusion and denoising score matching.
 
-## Notes
-
-- `biblio/sources/` is considered local reference material and is ignored by git for future additions.
-- The notebook and paper are designed to use consistent symbols and indexing.
+The public notebook to read or run is the one maintained in the `ot4ml` repository; the notebook stored here is a local companion working version for this project.

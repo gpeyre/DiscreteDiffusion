@@ -1,0 +1,118 @@
+\section{Continuous-Time Finite-Chain Formulation and Operator Matching}
+\subsection{Continuous-time extension of the finite-state tutorial}
+Let $\mathcal X=\{1,\dots,n\}$ and let $(A_t)_{t\in[0,T]}$ be a time-dependent forward generator:
+\[
+(A_t)_{ij}\ge 0\ (j\neq i),\qquad
+(A_t)_{ii}=-\sum_{j\neq i}(A_t)_{ij}.
+\]
+The forward marginal evolves by the Kolmogorov equation
+\[
+\frac{d}{dt}h^t=A_t^\top h^t,\qquad h^0\in\Delta_n.
+\]
+For small step $\tau$, the discrete kernel is
+\[
+P^t=I+\tau A_t+o(\tau),
+\]
+which recovers the tutorial recursion $h^{t+\tau}=(P^t)^\top h^t$.
+
+\subsection{Backward generator by infinitesimal Bayes inversion}
+Define reverse rates for $i\neq j$ by
+\[
+(\widetilde A_t)_{ij}
+=\frac{h_j^t}{h_i^t}(A_t)_{ji},
+\qquad
+(\widetilde A_t)_{ii}=-\sum_{j\neq i}(\widetilde A_t)_{ij}.
+\]
+Then $Q^t=I+\tau \widetilde A_t+o(\tau)$ is the infinitesimal analogue of Bayes reverse kernels.
+Moreover, $(h^t)$ is invariant for reverse-time dynamics in the sense
+\[
+\frac{d}{dt}h^t=-\widetilde A_t^\top h^t.
+\]
+This is the continuous-time counterpart of $Q^t\in\Kset(h^{t+\tau},h^t)$.
+
+\subsection{Operator matching viewpoint in finite Markov chains}
+For test functions $\varphi:\mathcal X\to\mathbb R$, define forward/backward operators
+\[
+(\mathcal L_t\varphi)(i)=\sum_j (A_t)_{ij}\big(\varphi(j)-\varphi(i)\big),
+\]
+\[
+(\widetilde{\mathcal L}_t\varphi)(i)=\sum_j (\widetilde A_t)_{ij}\big(\varphi(j)-\varphi(i)\big).
+\]
+The weak-form evolution is
+\[
+\frac{d}{dt}\langle h^t,\varphi\rangle=\langle h^t,\mathcal L_t\varphi\rangle,
+\]
+which is the finite-state analogue of the weak continuity-equation formulation used in operator flow matching.
+
+To make operator matching identifiable, one must average over a rich family of test functions.
+Let $\Phi\subset \mathbb R^{\mathcal X}$ be a function class and let $\rho$ be a sampling law on $\Phi$.
+Given a parametric reverse generator $\widetilde A_\theta(t)$ (equivalently operator $\widetilde{\mathcal L}_\theta$), define
+\[
+\mathcal J_{\mathrm{op}}(\theta)
+\coloneqq
+\mathbb E_{t}\,\mathbb E_{\varphi\sim\rho}\,\mathbb E_{i\sim h^t}\Big[
+\big((\widetilde{\mathcal L}_\theta)_t\varphi(i)-(\widetilde{\mathcal L}_\star)_t\varphi(i)\big)^2
+\Big],
+\]
+where $\widetilde{\mathcal L}_\star$ is the Bayes reverse operator.
+In practice, $\rho$ can be:
+\begin{itemize}
+\item uniform over a finite basis $\Phi=\{\varphi_m\}_{m=1}^M$ (e.g., canonical basis or low-frequency graph modes), or
+\item a random-feature distribution on functions.
+\end{itemize}
+Then
+\[
+\mathcal J_{\mathrm{op}}(\theta)\approx \frac1M\sum_{m=1}^M
+\mathbb E_t\mathbb E_{i\sim h^t}\!\left[
+\big((\widetilde{\mathcal L}_\theta)_t\varphi_m(i)-(\widetilde{\mathcal L}_\star)_t\varphi_m(i)\big)^2
+\right].
+\]
+This is the finite-chain specialization of matching transport operators/vector fields rather than directly matching full conditional distributions.
+
+\paragraph{Link with kernel log-likelihood training.}
+For small $\tau$, minimizing transition NLL for kernels
+\[
+Q_\theta^t=I+\tau \widetilde A_\theta(t)+o(\tau)
+\]
+and denote off-diagonal reverse rates by
+\[
+\widetilde a_{\theta,ij}(t)=(\widetilde A_\theta(t))_{ij},\quad i\neq j,
+\qquad
+\widetilde\lambda_{\theta,i}(t)=\sum_{j\neq i}\widetilde a_{\theta,ij}(t).
+\]
+For one small step, population NLL (cross-entropy) between $Q_\star^t$ and $Q_\theta^t$ expands as
+\[
+\mathcal L_t(\theta)
+=C_t
++\tau\sum_i h_i^t
+\sum_{j\neq i}\Big[
+\widetilde a_{\star,ij}\log\frac{\widetilde a_{\star,ij}}{\widetilde a_{\theta,ij}}
+-\widetilde a_{\star,ij}
++\widetilde a_{\theta,ij}
+\Big]
++o(\tau),
+\]
+which is the weighted Poisson-KL between reverse rates.
+Near the optimum ($\widetilde a_{\theta,ij}\approx \widetilde a_{\star,ij}$),
+\[
+\mathcal L_t(\theta)-\mathcal L_t(\star)
+=\frac{\tau}{2}\sum_i h_i^t\sum_{j\neq i}
+\frac{\big(\widetilde a_{\theta,ij}-\widetilde a_{\star,ij}\big)^2}
+{\widetilde a_{\star,ij}}
++o\!\left(\tau\|\widetilde A_\theta-\widetilde A_\star\|^2\right),
+\]
+which is the precise ``quadratic local discrepancy between reverse rates''.
+
+Yes, this can be realized through a suitable choice of test-function distribution $\rho$.
+Take $\Phi=\{\mathbf 1_{\{j\}}\}_{j=1}^n$ (canonical indicator functions), uniform $\rho$ on $\Phi$.
+Then
+\[
+(\widetilde{\mathcal L}_t\mathbf 1_{\{j\}})(i)=
+\begin{cases}
+\widetilde a_{ij}(t), & i\neq j,\\
+-\widetilde\lambda_j(t), & i=j,
+\end{cases}
+\]
+so $\mathcal J_{\mathrm{op}}$ becomes a weighted quadratic loss on off-diagonal rates plus escape rates.
+Hence, with this $\rho$, operator matching directly controls the same local objects as the small-$\tau$ NLL expansion.
+If $\Phi$ is dense/separating, $\mathcal J_{\mathrm{op}}(\theta)=0$ implies $\widetilde A_\theta=\widetilde A_\star$ (on the support of $h^t$), exactly as in the Gaussian continuous-state limit where reverse-kernel NLL reduces to score regression.
