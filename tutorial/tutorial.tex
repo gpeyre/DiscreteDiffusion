@@ -148,7 +148,7 @@ so backward recursion terminates at $h^0$.
 Given a forward chain with kernel $P$ and marginals $(h^t)$, the Bayes kernel at time $t$ is
 \[
 Q^{\mathrm B,t}_{j,i}\coloneqq
-\mathbb{P}(X^t=j\mid X^{t+1}=i).
+\mathbb{P}(X^t=i\mid X^{t+1}=j).
 \]
 This is to be contrasted with the forward convention
 \[
@@ -169,7 +169,7 @@ b_i^+=
 Then the Bayes kernel is given componentwise by
 \begin{equation}
 \label{eq:bayes-entry}
-Q^{\mathrm B}_{j,i}=a_j P_{j,i}\, b_i^+.
+Q^{\mathrm B}_{j,i}=a_i P_{i,j}\, b_j^+.
 \end{equation}
 In matrix form,
 \begin{equation}
@@ -179,11 +179,11 @@ Q^{\mathrm B}=\diag(b)^+P^\top\diag(a).
 Moreover, $Q^{\mathrm B}\in\Kset(b,a)$, i.e. it is an admissible inverse kernel.
 \end{proposition}
 \begin{proof}
-The component formula is exactly Bayes rule when $b_i>0$, and the pseudo-inverse convention sets the corresponding row to zero when $b_i=0$. Since $b=P^\top a$, the latter case implies
+The component formula is exactly Bayes rule when $b_j>0$, and the pseudo-inverse convention sets the corresponding row to zero when $b_j=0$. Since $b=P^\top a$, the latter case implies
 \[
-b_i=\sum_j a_j P_{j,i}=0,
+b_j=\sum_i a_i P_{i,j}=0,
 \]
-hence $a_j P_{j,i}=0$ for every $j$, so the formula is still consistent.
+hence $a_i P_{i,j}=0$ for every $i$, so the formula is still consistent.
 
 For admissibility, first compute
 \[
@@ -193,7 +193,7 @@ Q^{\mathrm B}\ones
 =
 \diag(b)^+ b.
 \]
-For every $i$ such that $b_i>0$, the $i$-th entry equals $1$. If $b_i=0$, then the $i$-th row of $Q^{\mathrm B}$ is identically zero and this row is never visited under the marginal $b$; equivalently, the conditional law on that null-mass event is immaterial. On the support of $b$, $Q^{\mathrm B}$ is therefore stochastic.
+For every $j$ such that $b_j>0$, the $j$-th entry equals $1$. If $b_j=0$, then the $j$-th row of $Q^{\mathrm B}$ is identically zero and this row is never visited under the marginal $b$; equivalently, the conditional law on that null-mass event is immaterial. On the support of $b$, $Q^{\mathrm B}$ is therefore stochastic.
 
 Next,
 \[
@@ -343,11 +343,11 @@ This is summarized by the commutative diagram (with arrows in both directions):
 
 \section{Learning the Reverse Kernel}
 \subsection{Statistical formulation}
-Let $Q_\theta^t(j,i)$ be a neural network parameterization such that, for each $(t,i)$,
+Let $Q_\theta^t(j,i)$ be a neural network parameterization such that, for each $(t,j)$,
 \[
-Q_\theta^t(i,\cdot)\in\Delta_n
+Q_\theta^t(j,\cdot)\in\Delta_n
 \]
-(typically enforced by a softmax over $j$).
+(typically enforced by a softmax over $i$).
 
 In practice one starts from $N_0$ samples drawn from $h^0$, runs the forward noising process from each of them up to time $T$, and records transition pairs along the resulting trajectories. This produces observations of the form
 \[
@@ -367,7 +367,7 @@ Let $\theta_N$ be a global minimizer of $L_N$.
 \subsection{Population target and consistency interpretation}
 Define the Bayes reverse kernels
 \[
-Q_\star^t(j,i)\coloneqq \mathbb P(X^t=j\mid X^{t+1}=i,\,t),
+Q_\star^t(j,i)\coloneqq \mathbb P(X^t=i\mid X^{t+1}=j,\,t),
 \]
 which coincide with the canonical Bayes inverse from Section 2.
 To turn the empirical construction into a statistical model, assume now that the time labels are sampled from a probability law
@@ -386,37 +386,37 @@ L_N(\theta)\to L(\theta),
 pointwise in $\theta$ and, under stronger uniform-integrability and complexity assumptions, locally uniformly over parameter sets. The precise mode of convergence depends on the sampling protocol and model class.
 
 \begin{proposition}[Population NLL decomposition]
-Let $Q_\theta^t(i,\cdot)\in\Delta_n$ for all $(t,i)$. Then
+Let $Q_\theta^t(j,\cdot)\in\Delta_n$ for all $(t,j)$. Then
 \begin{equation}
 \label{eq:pop-kl-decomp}
-L(\theta)=C+\sum_{t=0}^{\infty}\lambda(t)\sum_{i=1}^n h_i^{t+1}\,
-\KL\!\big(Q_\star^t(i,\cdot)\,\|\,Q_\theta^t(i,\cdot)\big),
+L(\theta)=C+\sum_{t=0}^{\infty}\lambda(t)\sum_{j=1}^n h_j^{t+1}\,
+\KL\!\big(Q_\star^t(j,\cdot)\,\|\,Q_\theta^t(j,\cdot)\big),
 \end{equation}
 where
 \[
-C=\sum_{t=0}^{\infty}\lambda(t)\sum_{i=1}^n h_i^{t+1}\,H\!\big(Q_\star^t(i,\cdot)\big)
+C=\sum_{t=0}^{\infty}\lambda(t)\sum_{j=1}^n h_j^{t+1}\,H\!\big(Q_\star^t(j,\cdot)\big)
 \]
 is independent of $\theta$.
 \end{proposition}
 \begin{proof}
-Condition on $(t,X^{t+1}=i)$ and use $X^t\mid (t,X^{t+1}=i)\sim Q_\star^t(i,\cdot)$:
+Condition on $(t,X^{t+1}=j)$ and use $X^t\mid (t,X^{t+1}=j)\sim Q_\star^t(j,\cdot)$:
 \[
-L(\theta)=\sum_t \lambda(t)\sum_i h_i^{t+1}\sum_j
+L(\theta)=\sum_t \lambda(t)\sum_j h_j^{t+1}\sum_i
 Q_\star^t(j,i)\big[-\log Q_\theta^t(j,i)\big].
 \]
 Add and subtract $\log Q_\star^t(j,i)$ inside the sum:
 \[
-\sum_j Q_\star^t(j,i)\big[-\log Q_\theta^t(j,i)\big]
-=H(Q_\star^t(i,\cdot))
-+\KL(Q_\star^t(i,\cdot)\|Q_\theta^t(i,\cdot)).
+\sum_i Q_\star^t(j,i)\big[-\log Q_\theta^t(j,i)\big]
+=H(Q_\star^t(j,\cdot))
++\KL(Q_\star^t(j,\cdot)\|Q_\theta^t(j,\cdot)).
 \]
-Summing over $(t,i)$ gives \eqref{eq:pop-kl-decomp}.
+Summing over $(t,j)$ gives \eqref{eq:pop-kl-decomp}.
 \end{proof}
 
 Therefore, minimizing $L(\theta)$ is equivalent to minimizing
 \[
-\sum_{t=0}^{\infty}\lambda(t)\sum_{i=1}^n h_i^{t+1}\,
-\KL\!\big(Q_\star^t(i,\cdot)\,\|\,Q_\theta^t(i,\cdot)\big).
+\sum_{t=0}^{\infty}\lambda(t)\sum_{j=1}^n h_j^{t+1}\,
+\KL\!\big(Q_\star^t(j,\cdot)\,\|\,Q_\theta^t(j,\cdot)\big).
 \]
 
 \begin{proposition}[Consistency, informal]
@@ -426,7 +426,7 @@ Assume:
 \item empirical risk minimization is statistically consistent (uniform LLN / Glivenko--Cantelli type conditions),
 \item optimization finds a global minimizer (or asymptotically equivalent minimizers).
 \end{itemize}
-Then any limit point of $Q_{\theta_N}$ minimizes $L$ and agrees with $Q_\star^t(i,\cdot)$ for all $(t,i)$ such that $\lambda(t)\,h_i^{t+1}>0$.
+Then any limit point of $Q_{\theta_N}$ minimizes $L$ and agrees with $Q_\star^t(j,\cdot)$ for all $(t,j)$ such that $\lambda(t)\,h_j^{t+1}>0$.
 Hence the limit kernel is admissible:
 \[
 Q_{\theta^\star}^t\in\Kset(h^{t+1},h^t),\qquad t=0,\dots,T-1.
@@ -550,7 +550,7 @@ h_i^t=\rho_t(x_i)\,\Delta_X+o(\Delta_X)
 \end{equation}
 locally uniformly in $i$ as $\Delta_X\to0$. We consider the Bayes inverse kernel
 \[
-Q_{j,i}^t=\frac{h_j^t P_{j,i}}{h_i^{t+1}}
+Q_{j,i}^t=\frac{h_i^t P_{i,j}}{h_j^{t+1}}
 \]
 which, we remind, depends on the data law through the whole forward family $(h^t)$, hence ultimately on the initial histogram $h^0$.
 
@@ -560,7 +560,7 @@ Assume \eqref{eq:mesoscopic-scaling} and \eqref{eq:hist-density-limit}, and defi
 \[
 s^t(x)\coloneqq \partial_x\log \rho_t(x).
 \]
-For $x=x_i$ and $y=x_j$, define the piecewise-constant reverse density
+For $x=x_j$ and $y=x_i$, define the piecewise-constant reverse density
 \[
 Q^t(x,y)\coloneqq \frac{Q_{j,i}^t}{\Delta_X}.
 \]
@@ -662,7 +662,7 @@ Q_\theta^t(x,y)
 \frac{\exp\!\left(-\frac{(y-x-2\tau s_\theta^t(x))^2}{4\tau}\right)}
 {\sum_{z\in\mathcal G_{\Delta_X}}\exp\!\left(-\frac{(z-x-2\tau s_\theta^t(x))^2}{4\tau}\right)}.
 \end{equation}
-Equivalently, when $x=x_i$ and $y=x_j$, one has $Q_\theta^t(x_i,x_j)=Q_{\theta,j,i}^t$.
+Equivalently, when $x=x_j$ and $y=x_i$, one has $Q_\theta^t(x_j,x_i)=Q_{\theta,j,i}^t$.
 
 \begin{proposition}[One-step NLL in denoising form]
 \label{prop:nll-denoising-lattice}
@@ -772,6 +772,9 @@ s_\theta^{t+\tau}(\widetilde X^{t+\tau})
 \right],
 \]
 where $\widetilde \rho_{t+\tau}$ is the density of $\widetilde X^{t+\tau}$. In the present discrete-time/discrete-space setting, the heuristic bridge to this continuous statement is obtained by replacing the integer index $t$ by the physical time $t\tau$ and then sending $\tau\to0$ while $t\to+\infty$.
+
+\section*{Acknowledgments}
+I thank Eddie Aamari for inspiring discussions and feedback on the fine-grid limit of discrete diffusion.
 
 \bibliographystyle{plainnat}
 \bibliography{tutorial}
