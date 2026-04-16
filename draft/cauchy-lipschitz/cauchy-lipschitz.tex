@@ -1,0 +1,304 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+
+\title{Rectified Flow meets Cauchy-Lipschitz}
+\author{Gabriel Peyr\'e\\
+CNRS and ENS PSL Universit\'e\\
+\texttt{gabriel.peyre@ens.fr}}
+\date{April 16, 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Transportation-based generative models (such as diffusion models in their noise-free form and flow-matching methods) sample a target distribution by integrating an ordinary differential equation. The Rectified Flow method introduced in the landmark paper of Liu, Gong, and Liu~\cite{liu2022rectified} not only proposes a flow-matching viewpoint, but also advocates iterating the procedure so as to obtain straighter particle trajectories. This is especially appealing at inference time, since straighter trajectories should require fewer integration steps. A prototypical case is optimal transport, where particles move along straight lines, although this is of course not the only possible vector field. While this intuition is natural, the standard global discretization analysis based on Cauchy-Lipschitz and Gr\"onwall estimates emphasizes the Lipschitz regularity of the vector field rather than the acceleration of the particles, which vanishes for perfectly straight trajectories.
+%
+In this short note, I prove a refined version of the classical Euler error estimate in which the global error is directly controlled by the material acceleration of the flow. The usual Cauchy-Lipschitz bound appears as a coarser upper bound on this sharper estimate. This does not imply that rectified flows uniformly improve sampling performance, since numerical integration error is only one component of the overall sampling error, and often not the dominant one. In particular, the approximation error incurred when learning the vector field from finite data can be much larger.
+\end{abstract}
+
+
+Let $d\geq 1$, and let
+\[
+v : [0,1]\times \mathbb{R}^d \to \mathbb{R}^d
+\]
+be a $C^1$ velocity field. We consider the ODE
+\[
+\dot X(t)=v(t,X(t)),
+\qquad
+X(0)=x_0\in\mathbb{R}^d,
+\]
+together with its explicit Euler discretization with time step $h=1/n$:
+\[
+x_{k+1}=x_k+h\,v(t_k,x_k),
+\qquad
+t_k=kh,
+\qquad
+k=0,\dots,n-1.
+\]
+
+We denote by
+\[
+L_{\mathrm{space}}
+:=
+\sup_{t\in[0,1],\,x\in\mathbb{R}^d}
+\norm{D_x v(t,x)}
+\]
+a global spatial Lipschitz constant, where $\norm{\cdot}$ is the Euclidean norm on vectors and the associated operator norm on matrices. We also introduce the \emph{material acceleration}
+\[
+a(t,x)
+:=
+\partial_t v(t,x)+D_x v(t,x)\,v(t,x),
+\]
+and its global bound
+\[
+A_{\max}
+:=
+\sup_{t\in[0,1],\,x\in\mathbb{R}^d}\norm{a(t,x)}.
+\]
+
+The quantity $a(t,x)$ is the derivative of the velocity field along trajectories. Indeed, if $X$ solves the ODE, then
+\[
+\ddot X(t)=a(t,X(t)).
+\]
+
+
+\begin{proposition}[Refined global error bound]\label{prop:main}
+Assume that $L_{\mathrm{space}}<\infty$ and $A_{\max}<\infty$. Let $X(t)$ be the exact solution of
+\[
+\dot X(t)=v(t,X(t)),
+\qquad
+X(0)=x_0,
+\]
+and let $(x_k)_{k=0}^n$ be the explicit Euler iterates. Then
+\[
+\max_{0\leq k\leq n}\norm{X(t_k)-x_k}
+\leq
+\frac{1}{2n}e^{L_{\mathrm{space}}}A_{\max}.
+\]
+\end{proposition}
+
+\begin{proof}
+Set
+\[
+e_k:=X(t_k)-x_k.
+\]
+We first estimate the one-step local truncation error
+\[
+\delta_k
+:=
+X(t_{k+1})-\Bigl(X(t_k)+h\,v(t_k,X(t_k))\Bigr).
+\]
+Since $X$ is of class $C^2$, Taylor's formula with integral remainder gives
+\[
+X(t_{k+1})
+=
+X(t_k)+h\,\dot X(t_k)+\int_{t_k}^{t_{k+1}} (t_{k+1}-s)\,\ddot X(s)\,ds,
+\]
+hence
+\[
+\delta_k=\int_{t_k}^{t_{k+1}} (t_{k+1}-s)\,\ddot X(s)\,ds.
+\]
+Therefore,
+\[
+\norm{\delta_k}
+\leq
+\int_{t_k}^{t_{k+1}} (t_{k+1}-s)\,
+\sup_{u\in[t_k,t_{k+1}]}\norm{\ddot X(u)}\,ds
+\leq
+\frac{h^2}{2}\sup_{u\in[t_k,t_{k+1}]}\norm{\ddot X(u)}.
+\]
+
+Now, by the chain rule,
+\[
+\ddot X(t)
+=
+\partial_t v(t,X(t))+D_x v(t,X(t))\,\dot X(t)
+=
+\partial_t v(t,X(t))+D_x v(t,X(t))\,v(t,X(t))
+=
+a(t,X(t)).
+\]
+Thus
+\[
+\sup_{u\in[t_k,t_{k+1}]}\norm{\ddot X(u)}
+\leq
+A_{\max},
+\]
+and so
+\[
+\norm{\delta_k}\leq \frac{h^2}{2}A_{\max}.
+\]
+
+We now derive the error recursion:
+\begin{align*}
+e_{k+1}
+&=
+X(t_{k+1})-x_{k+1}\\
+&=
+\Bigl(X(t_k)+h\,v(t_k,X(t_k))+\delta_k\Bigr)
+-\Bigl(x_k+h\,v(t_k,x_k)\Bigr)\\
+&=
+e_k+h\Bigl(v(t_k,X(t_k))-v(t_k,x_k)\Bigr)+\delta_k.
+\end{align*}
+Taking norms and using the spatial Lipschitz bound,
+\[
+\norm{v(t_k,X(t_k))-v(t_k,x_k)}
+\leq
+L_{\mathrm{space}}\norm{e_k},
+\]
+we obtain
+\[
+\norm{e_{k+1}}
+\leq
+(1+hL_{\mathrm{space}})\norm{e_k}+\frac{h^2}{2}A_{\max}.
+\]
+Since $e_0=0$, iterating this inequality yields
+\[
+\norm{e_k}
+\leq
+\frac{h^2}{2}A_{\max}\sum_{j=0}^{k-1}(1+hL_{\mathrm{space}})^j.
+\]
+If $L_{\mathrm{space}}=0$, this gives directly
+\[
+\norm{e_k}\leq \frac{kh^2}{2}A_{\max}\leq \frac{h}{2}A_{\max},
+\]
+which is stronger than the desired estimate.
+
+Assume now that $L_{\mathrm{space}}>0$. Then
+\[
+\sum_{j=0}^{k-1}(1+hL_{\mathrm{space}})^j
+=
+\frac{(1+hL_{\mathrm{space}})^k-1}{hL_{\mathrm{space}}},
+\]
+hence
+\[
+\norm{e_k}
+\leq
+\frac{h}{2}A_{\max}
+\frac{(1+hL_{\mathrm{space}})^k-1}{L_{\mathrm{space}}}.
+\]
+Using $(1+u)^m\leq e^{um}$ for $u\geq 0$ and $m\in\mathbb{N}$, we get
+\[
+(1+hL_{\mathrm{space}})^k
+\leq
+e^{hL_{\mathrm{space}}k}
+\leq
+e^{L_{\mathrm{space}}},
+\]
+since $hk\leq 1$. Therefore
+\[
+\frac{(1+hL_{\mathrm{space}})^k-1}{L_{\mathrm{space}}}
+\leq
+\frac{e^{L_{\mathrm{space}}}-1}{L_{\mathrm{space}}}
+\leq
+e^{L_{\mathrm{space}}},
+\]
+because $e^u-1\leq ue^u$ for every $u\geq 0$. We conclude that
+\[
+\norm{e_k}\leq \frac{h}{2}e^{L_{\mathrm{space}}}A_{\max}.
+\]
+Since $h=1/n$, this proves
+\[
+\max_{0\leq k\leq n}\norm{X(t_k)-x_k}
+\leq
+\frac{1}{2n}e^{L_{\mathrm{space}}}A_{\max}.
+\qedhere
+\]
+\end{proof}
+
+
+\begin{remark}[Comparison with the classical Cauchy-Lipschitz bound]
+Assume in addition that $v$ is globally Lipschitz both in space and in time, namely that there exist constants
+\[
+L_{\mathrm{space}},L_{\mathrm{time}}\geq 0
+\]
+such that, for all $t,s\in[0,1]$ and $x,y\in\mathbb{R}^d$,
+\[
+\norm{v(t,x)-v(t,y)}\leq L_{\mathrm{space}}\norm{x-y},
+\qquad
+\norm{v(t,x)-v(s,x)}\leq L_{\mathrm{time}}|t-s|.
+\]
+Assume also that the exact trajectory remains in a region where
+\[
+\norm{v(t,X(t))}\leq V_{\max}
+\qquad\text{for all }t\in[0,1].
+\]
+For instance, this follows if one knows a priori that $X(t)$ stays in some bounded set and that $v$ is bounded on this set.
+
+Then the material acceleration satisfies
+\[
+\norm{a(t,x)}
+=
+\norm{\partial_t v(t,x)+D_xv(t,x)\,v(t,x)}
+\leq
+\norm{\partial_t v(t,x)}+\norm{D_xv(t,x)}\,\norm{v(t,x)}.
+\]
+Under the above assumptions, this gives along the exact trajectory
+\[
+\norm{\ddot X(t)}
+=
+\norm{a(t,X(t))}
+\leq
+L_{\mathrm{time}}+L_{\mathrm{space}}V_{\max}.
+\]
+Hence one may take
+\[
+A_{\max}\leq L_{\mathrm{time}}+L_{\mathrm{space}}V_{\max},
+\]
+and \cref{prop:main} yields the classical first-order estimate
+\[
+\max_{0\leq k\leq n}\norm{X(t_k)-x_k}
+\leq
+\frac{1}{2n}e^{L_{\mathrm{space}}}\bigl(L_{\mathrm{time}}+L_{\mathrm{space}}V_{\max}\bigr).
+\]
+This is the usual Cauchy-Lipschitz/Gr\"onwall type bound: the global error is $O(n^{-1})$, with a constant controlled by the spatial Lipschitz constant of the vector field and by a crude upper bound on the second derivative obtained from separate bounds on time variation and velocity magnitude. The refined estimate of \cref{prop:main} is sharper because it replaces this upper bound by the actual material acceleration $A_{\max}$.
+\end{remark}
+
+
+\begin{remark}[Perfectly rectified flows]
+If every particle trajectory is a straight line traversed at constant speed, then
+\[
+\ddot X(t)=0
+\]
+along the flow, hence
+\[
+A_{\max}=0.
+\]
+In that idealized case, the bound of \cref{prop:main} predicts zero discretization error at the grid points: explicit Euler recovers the trajectory exactly, regardless of the step size. This is precisely the mechanism that makes straight trajectories attractive at inference time.
+\end{remark}
+
+\begin{remark}[Connection with dynamic optimal transport]
+A canonical example where $A_{\max}=0$ is given by the velocity field associated with the Benamou-Brenier dynamic formulation of quadratic optimal transport, whenever the flow is represented in Lagrangian form by displacement interpolation between source and target points. In that case, particles move along straight lines at constant speed, so the material acceleration vanishes.
+\end{remark}
+
+\begin{remark}[Relevance for rectified flow]
+The Rectified Flow viewpoint of Liu, Gong, and Liu~\cite{liu2022rectified} emphasizes the benefit of straight trajectories for fast numerical integration. The estimate above gives a simple mathematical justification for that heuristic: smaller material acceleration implies a smaller Euler discretization error. Of course, one should not conclude from this alone that rectification uniformly improves generative performance, since numerical integration error is only one component of the total sampling error, alongside model misspecification, estimation error, optimization error, and finite-data effects.
+\end{remark}
+
+\begin{thebibliography}{9}
+
+\bibitem{liu2022rectified}
+Xingchao Liu, Chengyue Gong, and Qiang Liu.
+\newblock \emph{Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow}.
+\newblock arXiv:2209.03003, 2022.
+\newblock \url{https://arxiv.org/abs/2209.03003}.
+
+\end{thebibliography}
+
+\end{document}
